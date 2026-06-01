@@ -2,6 +2,10 @@
 
 const { Pool } = require("pg");
 
+//Importamos el paquete pg-format
+
+const format = require("pg-format");
+
 //Importamos el paquete "dotenv"
 
 require("dotenv").config();
@@ -19,14 +23,17 @@ const pool = new Pool({
 //Funciones para consultas SQL
 
 //Función para obtener las joyas
-const obtenerJoyas = async ({ limit = 10 }) => {
+const obtenerJoyas = async ({ limits = 10, order_by = "id_ASC" }) => {
+  //Usamos try catch para manejar errores
   try {
-    const consulta = "SELECT * FROM joyas LIMIT $1";
-    const { rows: joyas } = await pool.query(consulta, [limit]);
-    return joyas;
+    const [campo, direccion] = order_by.split("_"); //Indicamos que los parámetros para ORDER BY estarán separados por "_"
+    //Consulta parametrizada que permite consultar con LIMIT y ORDER BY
+    const formattedQuery = format("SELECT * FROM inventario order by %s %s LIMIT %s", campo, direccion, limits);
+    const { rows: joyas } = await pool.query(formattedQuery); //Extraemos el arreglo joyas de la respuesta de la consulta
+    return joyas; //Devolvemos el arreglo que contiene las joyas
   } catch (error) {
-    console.error("Error al obtener las joyas de la base de datos:", error.message);
-    throw error;
+    console.error("Error al obtener las joyas de la base de datos:", error.message); //Mostramos un mensaje por consola con el detalle del error
+    throw error; //Devolvemos el error a la API para que responda con el mensaje 500 de la cláusula error de la ruta GET
   }
 };
 
