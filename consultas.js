@@ -22,9 +22,9 @@ const pool = new Pool({
 
 //Funciones para consultas SQL
 
-//Función para obtener las joyas
+//Función para obtener todas las joyas con LIMIT, ORDER BY y PAGE
 const obtenerJoyas = async ({ limits = 10, order_by = "id_ASC", page = 1 }) => {
-  //Usamos try catch para manejar errores
+  //Usamos try catch para manejar errores al consultar la BD
   try {
     const [campo, direccion] = order_by.split("_"); //Indicamos que los parámetros para ORDER BY estarán separados por "_"
     const offset = Math.abs((page - 1) * limits); //Para calcular el offset
@@ -38,5 +38,42 @@ const obtenerJoyas = async ({ limits = 10, order_by = "id_ASC", page = 1 }) => {
   }
 };
 
+//Función para obtener las joyas con filtros y parametrizados
+const obtenerJoyasConFiltros = async ({ precio_max, precio_min, categoria, metal }) => {
+  //Usamos try catch para manejar errores al consultar la BD
+  try {
+    let filtros = []; //Iniciamos el arreglo filtros vacío
+    const values = []; //Iniciamos el arreglo values vacío
+
+    //Función auxiliar para automatizar el llenado de los arreglos "filtros" y "values"
+    const agregarFiltro = (campo, comparador, valor) => {
+      //Función que recibe 3 argumentos
+      values.push(valor); //Se agrega al arreglo "valor" el valor recibido en la consulta
+      const { length } = filtros; //Se lee la longitud del arreglo "filtros"
+      filtros.push(`${campo} ${comparador} $${length + 1}`); //Agregamos al arreglo "filtros" el filtro construído parametrizando el valor recibido en la consulta
+    };
+
+    //Evaluamos la existencia de filtros para agregarlos o no
+    if (precio_max) agregarFiltro("precio", "<=", precio_max); //Si el filtro precio_max existe y su valor
+    if (precio_min) agregarFiltro("precio", ">=", precio_min); //Si el filtro precio_min existe y su valor
+    if (categoria) agregarFiltro("categoria", "=", categoria); //Si el filtro categoria existe y su valor
+    if (metal) agregarFiltro("metal", "=", metal); //Si el filtro metal existe y su valor
+
+    //Se construye la consulta final concatenando (si hay filtros) los filtros a la consulta original
+    let consulta = "SELECT * FROM inventario"; //Consulta base que selecciona todos los registros
+    //Si hay filtros se concatenan a la consulta con operador AND
+    if (filtros.length > 0) {
+      filtros = filtros.join(" AND ");
+      consulta += ` WHERE ${filtros}`;
+    }
+
+    const { rows: joyas } = await pool.query(consulta, values); //Extraemos el arreglo joyas de la respuesta de la consulta
+    return joyas; //Devolvemos el arreglo que contiene las joyas
+  } catch (error) {
+    console.error("Error al obtener las joyas de la base de datos:", error.message); //Mostramos un mensaje por consola con el detalle del error
+    throw error; //Devolvemos el error a la API para que responda con el mensaje 500 de la cláusula error de la ruta GET
+  }
+};
+
 // Exportamos las funciones
-module.exports = { obtenerJoyas };
+module.exports = { obtenerJoyas, obtenerJoyasConFiltros };
