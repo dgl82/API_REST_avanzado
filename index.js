@@ -43,3 +43,9 @@ app.get("/joyas/filtros", async (req, res) => {
     });
   }
 });
+
+//Ruta por defecto
+//Cuando la ruta consultada no existe en la API, se devuelve error 400 y mensaje personalizado
+app.get("*path", (req, res) => {
+  res.status(404).send("Esta ruta no existe");
+});
