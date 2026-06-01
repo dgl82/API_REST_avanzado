@@ -23,12 +23,13 @@ const pool = new Pool({
 //Funciones para consultas SQL
 
 //Función para obtener las joyas
-const obtenerJoyas = async ({ limits = 10, order_by = "id_ASC" }) => {
+const obtenerJoyas = async ({ limits = 10, order_by = "id_ASC", page = 1 }) => {
   //Usamos try catch para manejar errores
   try {
     const [campo, direccion] = order_by.split("_"); //Indicamos que los parámetros para ORDER BY estarán separados por "_"
+    const offset = Math.abs((page - 1) * limits); //Para calcular el offset
     //Consulta parametrizada que permite consultar con LIMIT y ORDER BY
-    const formattedQuery = format("SELECT * FROM inventario order by %s %s LIMIT %s", campo, direccion, limits);
+    const formattedQuery = format("SELECT * FROM inventario order by %s %s LIMIT %s OFFSET %s", campo, direccion, limits, offset);
     const { rows: joyas } = await pool.query(formattedQuery); //Extraemos el arreglo joyas de la respuesta de la consulta
     return joyas; //Devolvemos el arreglo que contiene las joyas
   } catch (error) {
