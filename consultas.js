@@ -75,5 +75,22 @@ const obtenerJoyasConFiltros = async ({ precio_max, precio_min, categoria, metal
   }
 };
 
+//Función para formatear los datos a HATEOAS
+const prepararHATEOAS = (joyas) => {
+  const stockTotal = joyas.reduce((acumulado, joya) => acumulado + joya.stock, 0); //Calculamos el stock total sumando el stock de las joyas devueltas en el arreglo de la consulta
+  //Hacemos map al arreglo joyas para extraer solo 'name' y construir el 'href' con el id de cada joya en un nuevo arreglo
+  const results = joyas.map((joya) => ({
+    name: joya.nombre,
+    href: `/joyas/joya/${joya.id}`,
+  }));
+
+  //Retornamos la estructura HATEOAS con los datos de las joyas devueltas en la consulta
+  return {
+    totalJoyas: joyas.length, //Mostramos la cantidad total de joyas devueltas en la consulta
+    stockTotal, //La suma total del stock de las joyas de la consulta
+    results, //Arreglo con el nombre y enlace de cada joya de la consulta
+  };
+};
+
 // Exportamos las funciones
-module.exports = { obtenerJoyas, obtenerJoyasConFiltros };
+module.exports = { obtenerJoyas, obtenerJoyasConFiltros, prepararHATEOAS };
